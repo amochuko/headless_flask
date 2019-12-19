@@ -1,0 +1,9 @@
+genrate auto stub (type checking) for non-typed module
+example usage: stubgen module_name flag output_directory (stubgen demo.py -o stubs)
+
+
+# Also, to read listed modules from a file for type checking, 
+# use the following shell cmd where 'files_to_type_check.txt' 
+# is the file with the listed module
+
+mypy @'files_to_type_check.txt' 

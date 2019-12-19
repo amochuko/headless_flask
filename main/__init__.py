@@ -44,4 +44,12 @@ def create_app(test_config=None):
     # with app.app_context():
     db.init_app(app)
 
+    # register blueprint
+
+    # pylint: disable=import-outside-toplevel
+    from .views import auth
+    app.register_blueprint(auth.bp)
+
+    from .views import nav_menu
+    app.register_blueprint(nav_menu.bp)
     return app

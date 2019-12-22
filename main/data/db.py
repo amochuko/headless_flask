@@ -87,8 +87,8 @@ class DBConnection():
         except EOFError as err:
             print("{} {}".format(
                 err, reports.STDOUT.get("access_error_table_script")))
-        else:
-            pass
+        finally:
+            cursor.close()
 
     @staticmethod
     def db_close(e=None):  # pylint: disable=invalid-name
@@ -112,7 +112,7 @@ class DBConnection():
                 self.create_db()
                 #g.conn.database = self.__DB_NAME
             else:
-                print(err)
+                print('err:', err)
                 exit(1)
 
     def init_app(self, app):

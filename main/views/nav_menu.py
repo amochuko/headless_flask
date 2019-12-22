@@ -1,23 +1,14 @@
 from typing import Dict, Iterable, Union, Optional, overload, Tuple
 from typing_extensions import Final
-from flask import Blueprint, g, redirect, request as req, jsonify, Markup
+from flask import Blueprint, g, request as req
 from werkzeug.exceptions import abort
-from mysql.connector import Error
-from mysql.connector import errorcode
+from mysql.connector import Error, errorcode
 
-from main.data.db import DBConnection
+from main.data.db_conect import db_connection
 from main.util import reports as rp
 from main.util import lib
 
-__DB: Final = DBConnection(load_sample_data=False)
 bp: Final = Blueprint(name='nav_menu', import_name=__name__, url_prefix='/nav')
-
-
-def db_cnx():
-    """ DBconnection function """
-    cnx: Final = __DB.db_connect()  # cursor
-    cur: Final = cnx.cursor()
-    return (cnx, cur)
 
 
 @overload
@@ -40,23 +31,61 @@ def index() -> Union[Iterable[Dict[str, str]],
     nav: Final[Iterable[Dict[str, str]]] = []
 
     try:
-
-        _, cur = db_cnx()  # cursor
+        _, cur = db_connection()  # cursor
         cur.execute(""" SELECT * FROM nav_menu
-                        ORDER BY id ASC """)
+                        ORDER BY title ASC """)
 
         for (id, title) in cur.fetchall():
             nav.append({'id': id, 'title': title})
 
     except Error as error:
         if error.errno == errorcode.ER_NO_DB_ERROR:
-            err = rp.STDOUT.get('menu_list_empty')
+            err = rp.STDOUT.get('nav_menu').get('empty')
 
     finally:
         cur.close()
 
     if err is None:
+        return lib.route_response(res_ok=True, data=nav)
 
+    return lib.route_response(res_ok=False, data=err), 301
+
+
+@bp.route('/<int:nav_id>')
+def get_by_id(
+        nav_id
+) -> Union[Dict[str, str], str]:  # return can be a list[{str, str}] or str
+    """ list all nav menu """
+    
+    err: Optional[str] = None
+    nav: Final[Dict[str, str]] = {}
+
+    try:
+        _, cur = db_connection()  # cursor
+        query = """ SELECT * FROM nav_menu
+                        WHERE nav_id = %s """
+        vals = (nav_id, )
+        cur.execute(query, vals)
+
+        row = cur.fetchone()
+        if row is None:
+            err = rp.STDOUT.get('nav_menu').get('empty')
+        else:
+            while row:
+                nav = {
+                    'id': row[0],
+                    'title': row[1]
+                }
+                row = cur.fetchone()  # conditional check
+
+    except Error as error:
+        if error.errno == errorcode.ER_NO_DB_ERROR:
+            err = rp.STDOUT.get('nav_menu').get('empty')
+
+    finally:
+        cur.close()
+
+    if err is None:
         return lib.route_response(res_ok=True, data=nav)
 
     return lib.route_response(res_ok=False, data=err), 301
@@ -74,7 +103,7 @@ def create():
             err = rp.STDOUT.get('nav_menu').get('title_required')
 
         try:
-            cnx, cur = db_cnx()  # cursor
+            cnx, cur = db_connection()  # cursor
 
             # db
             sql: str = "INSERT INTO nav_menu (title) VALUES (%s)"
@@ -109,7 +138,7 @@ def edit(slug):
         new_title = req.json['title']
 
         try:
-            cnx, cur = db_cnx()  # cursor
+            cnx, cur = db_connection()  # cursor
 
             query = """ UPDATE nav_menu
                             SET title = %s
@@ -150,7 +179,7 @@ def delete(nav_id):
         res = None
 
         try:
-            cnx, cur = db_cnx()  # cursor
+            cnx, cur = db_connection()  # cursor
 
             query = """ DELETE FROM nav_menu
                             WHERE id = %s """
@@ -163,7 +192,6 @@ def delete(nav_id):
                 res = rp.STDOUT.get('nav_menu').get('delete_ok')
 
         except Error as error:
-            err = error
             if error.errno == errorcode.ER_DUP_ENTRY:
                 err = '{} - {}'.format(nav_id,
                                        rp.STDOUT.get('nav_menu').get('empty'))
@@ -185,7 +213,7 @@ def get_nav(slug):
     if req.method == 'GET':
 
         try:
-            _, cur = db_cnx()  # cursor
+            _, cur = db_connection()  # cursor
 
             query = """ SELECT id, title FROM nav_menu
                             WHERE title = %s

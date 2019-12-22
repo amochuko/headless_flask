@@ -9,6 +9,7 @@ def route_response(res_ok: bool, data: Iterable[str]) -> Iterable[str]:
     """ return response for routes """
     if not res_ok:
         return jsonify(err=data)
+        #return '{"err": data}'
 
     return jsonify(data=data)
 

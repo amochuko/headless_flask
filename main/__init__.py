@@ -1,5 +1,7 @@
 # pylint: disable=missing-module-docstring
 import os
+from typing import Dict
+from typing_extensions import Final
 from flask import Flask, jsonify
 from dotenv import load_dotenv
 
@@ -8,15 +10,14 @@ from main.config import Config
 
 # Globals
 load_data: bool = False
-db = DBConnection(load_sample_data=load_data)  # pylint: disable=invalid-name
-
+db: Final = DBConnection(load_sample_data=load_data)  # pylint: disable=invalid-name
 
 
 def create_app(test_config=None):
     """Initialize the core application."""
     load_dotenv()
 
-    app = Flask(__name__, instance_relative_config=True)
+    app: Final = Flask(__name__, instance_relative_config=True)
 
     # default config
     app.config.from_object(Config)
@@ -52,4 +53,7 @@ def create_app(test_config=None):
 
     from .views import nav_menu
     app.register_blueprint(nav_menu.bp)
+
+    from .views import pages
+    app.register_blueprint(pages.bp)
     return app

@@ -1,18 +1,19 @@
-import os  # pylint: disable=missing-module-docstring
+# pylint: disable=missing-module-docstring
+import os
 import mysql.connector
 from mysql.connector import errorcode
 from flask import g
+from typing_extensions import Final
 
 from main.util import reports
 
 
-class DBConnection():
+class DBConnection(object):
     """ Data Layer Class: takes an argument 'load_sample_data' of a
     boolean value (True or False) to determine if the database setup
     includes sample data seeded in.
-    For example: 
-    db = DBConnection(load_sample_data=True) would laod sample data
-    db = DBConnection(load_sample_data=False) would not load the sample data."""
+    For example:
+    db = DBConnection(load_sample_data=True) would laod sample data """
 
     __DB_NAME = os.getenv("DB_NAME")
 
@@ -23,7 +24,7 @@ class DBConnection():
     @staticmethod
     def db_connect():
         """ setting up database connection """
-        conn, cursor = None, None  # pylint: disable=unused-variable
+        conn, _ = None, None  # pylint: disable=unused-variable
 
         if 'db' not in g:
             try:
@@ -31,8 +32,7 @@ class DBConnection():
                     host=os.getenv("DB_HOST"),
                     user=os.getenv("DB_USER"),
                     password=os.getenv("DB_PASSWORD"),
-                    database=os.getenv('DB_NAME')
-                    )
+                    database=os.getenv('DB_NAME'))
 
                 # set global db access
                 g.conn = conn
@@ -126,3 +126,13 @@ class DBConnection():
 
     def __repr__(self):
         return '<DBConnection {}>'.format(self.load_sample_data)
+
+
+def db_connect():
+    # pylint: disable=invalid-name
+    """ DBconnection function """
+    __DB_obj: Final = DBConnection(load_sample_data=False)
+    cnx: Final = __DB_obj.db_connect()  # cursor
+    cur: Final = cnx.cursor()
+
+    return (cnx, cur)

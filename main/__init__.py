@@ -25,9 +25,9 @@ def create_app(test_config=None):
     # ensure instance path
     try:
         os.makedirs(app.instance_path)
-    except OSError:
-        pass
-        #print("Directory {} not available".format(app.instance_path))
+    except OSError as err:
+        # pylint: disable=no-member
+        app.logger.info('{}: {} instance directory not available'.format(err, app.instance_path))
 
     # test config
     if test_config is None:
@@ -36,13 +36,14 @@ def create_app(test_config=None):
         app.config.from_mapping(test_config)
 
     # init route
-    @app.route('/')
+    @app.route('/api')
     def index():  # pylint: disable=unused-variable
         return {'data': 'Hello WOrld!'}
 
     # Initialize Plugins
     # Import and call this functions from the factory before returning the app
     # with app.app_context():
+
     db.init_app(app)
 
     # register blueprint

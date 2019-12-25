@@ -1,14 +1,15 @@
+# pylint: disable=missing-module-docstring
 from typing import Dict, Iterable, Union, Optional, overload, Tuple
 from typing_extensions import Final
-from flask import Blueprint, g, request as req
+from flask import Blueprint, request as req
 from werkzeug.exceptions import abort
 from mysql.connector import Error, errorcode
 
-from main.data.db_conect import db_connection
+from main.data.db import db_connect
 from main.util import reports as rp
 from main.util import lib
 
-bp: Final = Blueprint(name='nav_menu', import_name=__name__, url_prefix='/nav')
+bp: Final = Blueprint(name='nav_menu', import_name=__name__, url_prefix='/api/nav')
 
 
 @overload
@@ -31,12 +32,12 @@ def index() -> Union[Iterable[Dict[str, str]],
     nav: Final[Iterable[Dict[str, str]]] = []
 
     try:
-        _, cur = db_connection()  # cursor
+        _, cur = db_connect()  # cursor
         cur.execute(""" SELECT * FROM nav_menu
                         ORDER BY title ASC """)
 
-        for (id, title) in cur.fetchall():
-            nav.append({'id': id, 'title': title})
+        for (nav_id, title) in cur.fetchall():
+            nav.append({'id': nav_id, 'title': title})
 
     except Error as error:
         if error.errno == errorcode.ER_NO_DB_ERROR:
@@ -56,12 +57,12 @@ def get_by_id(
         nav_id
 ) -> Union[Dict[str, str], str]:  # return can be a list[{str, str}] or str
     """ list all nav menu """
-    
+
     err: Optional[str] = None
     nav: Final[Dict[str, str]] = {}
 
     try:
-        _, cur = db_connection()  # cursor
+        _, cur = db_connect()  # cursor
         query = """ SELECT * FROM nav_menu
                         WHERE nav_id = %s """
         vals = (nav_id, )
@@ -72,10 +73,7 @@ def get_by_id(
             err = rp.STDOUT.get('nav_menu').get('empty')
         else:
             while row:
-                nav = {
-                    'id': row[0],
-                    'title': row[1]
-                }
+                nav = {'id': row[0], 'title': row[1]}
                 row = cur.fetchone()  # conditional check
 
     except Error as error:
@@ -103,7 +101,7 @@ def create():
             err = rp.STDOUT.get('nav_menu').get('title_required')
 
         try:
-            cnx, cur = db_connection()  # cursor
+            cnx, cur = db_connect()  # cursor
 
             # db
             sql: str = "INSERT INTO nav_menu (title) VALUES (%s)"
@@ -138,18 +136,16 @@ def edit(slug):
         new_title = req.json['title']
 
         try:
-            cnx, cur = db_connection()  # cursor
+            cnx, cur = db_connect()  # cursor
 
             query = """ UPDATE nav_menu
                             SET title = %s
                             WHERE title = %s """
 
             # TODO: check up with update statement
-
             data = (new_title, lib.get_from_slug(slug))
 
-            p = cur.execute(query, data)
-            print('ppp:', p)
+            cur.execute(query, data)
             cnx.commit()
             res = rp.STDOUT.get('nav_menu').get('update_ok')
 
@@ -179,7 +175,7 @@ def delete(nav_id):
         res = None
 
         try:
-            cnx, cur = db_connection()  # cursor
+            cnx, cur = db_connect()  # cursor
 
             query = """ DELETE FROM nav_menu
                             WHERE id = %s """
@@ -213,7 +209,7 @@ def get_nav(slug):
     if req.method == 'GET':
 
         try:
-            _, cur = db_connection()  # cursor
+            _, cur = db_connect()  # cursor
 
             query = """ SELECT id, title FROM nav_menu
                             WHERE title = %s
@@ -222,8 +218,8 @@ def get_nav(slug):
             cur.execute(query, vals)
 
             nav = []
-            for (id, title) in cur.fetchall():
-                nav.append({'id': id, 'title': title})
+            for (nav_id, title) in cur.fetchall(): # pylint: disable=invalid-name
+                nav.append({'id': nav_id, 'title': title})
 
         except Error as error:
             print('err:', error)

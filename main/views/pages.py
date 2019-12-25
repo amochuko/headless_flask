@@ -2,15 +2,15 @@
 
 from typing import Tuple, List, overload, Iterable, Dict, Union, Optional, Any
 from typing_extensions import Final
-from flask import Blueprint, jsonify, json, request as req
+from flask import Blueprint, jsonify, request as req
 from werkzeug.exceptions import abort
 from mysql.connector import Error as MySQLError, errorcode
 
-from main.data.db_conect import db_connection
+from main.data.db import db_connect
 from main.util import reports as rp
 from main.util import lib
 
-bp: Final = Blueprint(name='pages', import_name=__name__, url_prefix='/pages')
+bp: Final = Blueprint(name='pages', import_name=__name__, url_prefix='/api/pages')
 
 
 @overload
@@ -36,7 +36,7 @@ def index() -> Union[Iterable[Dict[str, str]], str]:
         p_obj = None
 
         try:
-            _, cur = db_connection()  # cursor
+            _, cur = db_connect()  # cursor
             cur.execute(""" SELECT
                             p.page_id, 
                             n.title nav_menu,
@@ -79,7 +79,7 @@ def get_by_id(page_id) -> Dict[str, str]:
         page: Optional[Dict[str, str]] = None
 
         try:
-            _, cur = db_connection()  # cursor
+            _, cur = db_connect()  # cursor
 
             query = """ SELECT
                             p.page_id, 
@@ -139,9 +139,10 @@ def create() -> str:
             err = rp.STDOUT.get('page').get('required')
 
         try:
-            cnx, cur = db_connection()
+            cnx, cur = db_connect()
 
-            query: str = """ INSERT INTO pages (title,nav_id,slug,image_url) VALUES (%s, %s, %s, %s) """
+            query: str = """ INSERT INTO pages (title,nav_id,slug,image_url)
+            VALUES (%s, %s, %s, %s) """
             vals: Tuple(str) = (title, nav_id, slug, image_url)
 
             cur.execute(query, vals)
@@ -181,7 +182,7 @@ def edit_put(page_id) -> str:
             err = rp.STDOUT.get('page').get('required')
 
         try:
-            cnx, cur = db_connection()
+            cnx, cur = db_connect()
             query: str = """ UPDATE pages
                                 SET 
                                     title = %s,
@@ -227,7 +228,7 @@ def edit_patch(page_id) -> str:
             err = rp.STDOUT.get('page').get('required')
 
         try:
-            cnx, cur = db_connection()
+            cnx, cur = db_connect()
             query: str = """ UPDATE pages
                                 SET 
                                     title = %s,
@@ -268,7 +269,7 @@ def delete(page_id) -> str:
             err = rp.STDOUT.get('page').get('err')
 
         try:
-            cnx, cur = db_connection()
+            cnx, cur = db_connect()
             q_del: str = """ DELETE FROM pages WHERE page_id = %s """
             v_del: Tuple(str) = (page_id, )
 

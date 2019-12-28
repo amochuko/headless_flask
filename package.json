@@ -30,7 +30,7 @@
 		"start": "concurrently \"yarn start-frontend\" \"yarn start-backend\" ",
 		"start-frontend": "react-scripts start",
 		"start-backend": "python server/flask run || python3 server/flask run || py -3 server/flask run",
-		"install-requirements":"pip install -r ../server/requirements.txt",
+		"install-requirements": "pip install -r ../server/requirements.txt",
 		"build": "react-scripts build",
 		"test": "react-scripts test",
 		"eject": "react-scripts eject",
@@ -70,5 +70,5 @@
 		"@storybook/addons": "^5.2.8",
 		"@storybook/react": "^5.2.8"
 	},
-	 "proxy": "http://localhost:5000"
+	"proxy": "http://localhost:5000"
 }
